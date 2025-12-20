@@ -14,31 +14,28 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "rooms")
-public class Room {
+@Document(collection = "motels")
+public class Motel {
 
     @Id
     private String id;
 
     @DBRef
-    private Motel motel; // Tham chiếu đến nhà trọ
+    private User landlord; // Chủ nhà trọ
 
-    private String roomNumber; // Số phòng
+    private String name;
 
-    private Double price; // Giá thuê
+    private String address;
 
-    private Double area; // Diện tích (m2)
+    private String description;
 
-    private Integer maxTenants; // Số người tối đa
-
-    private String status; // available, occupied, maintenance
+    private List<String> images = new ArrayList<>();
 
     @DBRef
-    private List<User> tenants = new ArrayList<>(); // Danh sách người thuê
-
-    private List<String> images = new ArrayList<>(); // Danh sách hình ảnh
+    private List<Room> rooms = new ArrayList<>();
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 }
+
