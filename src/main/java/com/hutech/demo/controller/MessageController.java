@@ -1,0 +1,190 @@
+package com.hutech.demo.controller;
+
+import com.hutech.demo.dto.ApiResponse;
+import com.hutech.demo.model.Message;
+import com.hutech.demo.service.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/messages")
+@CrossOrigin(origins = "*")
+public class MessageController {
+
+    @Autowired
+    private MessageService messageService;
+
+    // Gửi tin nhắn private
+    @PostMapping("/private")
+    public ResponseEntity<ApiResponse<Message>> sendPrivateMessage(
+            @RequestBody Map<String, String> request) {
+        try {
+            String senderId = request.get("senderId");
+            String receiverId = request.get("receiverId");
+            String content = request.get("content");
+
+            Message message = messageService.sendPrivateMessage(senderId, receiverId, content);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Gửi tin nhắn nhóm trong khu trọ
+    @PostMapping("/group")
+    public ResponseEntity<ApiResponse<Message>> sendGroupMessage(
+            @RequestBody Map<String, String> request) {
+        try {
+            String senderId = request.get("senderId");
+            String motelId = request.get("motelId");
+            String content = request.get("content");
+
+            Message message = messageService.sendGroupMessage(senderId, motelId, content);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Gửi thông báo từ admin
+    @PostMapping("/announcement")
+    public ResponseEntity<ApiResponse<Message>> sendAnnouncement(
+            @RequestBody Map<String, String> request) {
+        try {
+            String adminId = request.get("adminId");
+            String motelId = request.get("motelId");
+            String content = request.get("content");
+
+            Message message = messageService.sendAnnouncement(adminId, motelId, content);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi thông báo thành công", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn trong khu trọ
+    @GetMapping("/motel/{motelId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getMotelMessages(
+            @PathVariable String motelId) {
+        try {
+            List<Message> messages = messageService.getMotelMessages(motelId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn chat private giữa 2 người
+    @GetMapping("/private/{userId1}/{userId2}")
+    public ResponseEntity<ApiResponse<List<Message>>> getPrivateMessages(
+            @PathVariable String userId1,
+            @PathVariable String userId2) {
+        try {
+            List<Message> messages = messageService.getPrivateMessages(userId1, userId2);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn chưa đọc
+    @GetMapping("/unread/{userId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getUnreadMessages(
+            @PathVariable String userId) {
+        try {
+            List<Message> messages = messageService.getUnreadMessages(userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn chưa đọc thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Đếm số tin nhắn chưa đọc
+    @GetMapping("/unread/count/{userId}")
+    public ResponseEntity<ApiResponse<Long>> countUnreadMessages(
+            @PathVariable String userId) {
+        try {
+            long count = messageService.countUnreadMessages(userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đếm tin nhắn chưa đọc thành công", count));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Đánh dấu tin nhắn đã đọc
+    @PutMapping("/{messageId}/read")
+    public ResponseEntity<ApiResponse<Message>> markAsRead(
+            @PathVariable String messageId) {
+        try {
+            Message message = messageService.markAsRead(messageId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu đã đọc thành công", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Đánh dấu tất cả tin nhắn đã đọc
+    @PutMapping("/read-all/{userId}")
+    public ResponseEntity<ApiResponse<String>> markAllAsRead(
+            @PathVariable String userId) {
+        try {
+            messageService.markAllAsRead(userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu tất cả đã đọc thành công", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Xóa tin nhắn
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<ApiResponse<String>> deleteMessage(
+            @PathVariable String messageId,
+            @RequestParam String userId) {
+        try {
+            messageService.deleteMessage(messageId, userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Xóa tin nhắn thành công", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy thông báo trong khu trọ
+    @GetMapping("/announcements/{motelId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getMotelAnnouncements(
+            @PathVariable String motelId) {
+        try {
+            List<Message> messages = messageService.getMotelAnnouncements(motelId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông báo thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn group trong khu trọ
+    @GetMapping("/group/{motelId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getMotelGroupMessages(
+            @PathVariable String motelId) {
+        try {
+            List<Message> messages = messageService.getMotelGroupMessages(motelId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn nhóm thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+}

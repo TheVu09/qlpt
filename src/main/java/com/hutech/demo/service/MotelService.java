@@ -28,6 +28,11 @@ public class MotelService {
         User landlord = userRepository.findById(request.getLandlordId())
                 .orElseThrow(() -> new RuntimeException("Chủ nhà trọ không tồn tại"));
 
+        // Kiểm tra role của user có phải là LANDLORD không
+        if (!landlord.getRole().equals("ROLE_LANDLORD") && !landlord.getRole().equals("ROLE_ADMIN")) {
+            throw new RuntimeException("Chỉ chủ nhà trọ mới có thể tạo nhà trọ");
+        }
+
         Motel motel = new Motel();
         motel.setLandlord(landlord);
         motel.setName(request.getName());
@@ -39,6 +44,15 @@ public class MotelService {
         motel.setUpdatedAt(LocalDateTime.now());
 
         Motel savedMotel = motelRepository.save(motel);
+
+        // Cập nhật danh sách motelIds của landlord
+        if (landlord.getMotelIds() == null) {
+            landlord.setMotelIds(new ArrayList<>());
+        }
+        landlord.getMotelIds().add(savedMotel.getId());
+        landlord.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(landlord);
+
         return convertToResponse(savedMotel);
     }
 
@@ -109,10 +123,50 @@ public class MotelService {
 
     // Xóa nhà trọ
     public void deleteMotel(String id) {
-        if (!motelRepository.existsById(id)) {
-            throw new RuntimeException("Nhà trọ không tồn tại");
+        Motel motel = motelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nhà trọ không tồn tại"));
+
+        // Xóa motelId khỏi danh sách của landlord
+        User landlord = motel.getLandlord();
+        if (landlord != null && landlord.getMotelIds() != null) {
+            landlord.getMotelIds().removeIf(motelId -> motelId.equals(id));
+            landlord.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(landlord);
         }
+
         motelRepository.deleteById(id);
+    }
+
+    // Kiểm tra quyền sở hữu nhà trọ
+    public boolean isMotelOwner(String motelId, String userId) {
+        Motel motel = motelRepository.findById(motelId)
+                .orElseThrow(() -> new RuntimeException("Nhà trọ không tồn tại"));
+        return motel.getLandlord().getId().equals(userId);
+    }
+
+    // Lấy thống kê nhà trọ
+    public MotelStatistics getMotelStatistics(String motelId) {
+        Motel motel = motelRepository.findById(motelId)
+                .orElseThrow(() -> new RuntimeException("Nhà trọ không tồn tại"));
+
+        int totalRooms = motel.getRooms() != null ? motel.getRooms().size() : 0;
+        long availableRooms = motel.getRooms() != null
+                ? motel.getRooms().stream().filter(room -> "available".equals(room.getStatus())).count()
+                : 0;
+        long occupiedRooms = motel.getRooms() != null
+                ? motel.getRooms().stream().filter(room -> "occupied".equals(room.getStatus())).count()
+                : 0;
+        long maintenanceRooms = motel.getRooms() != null
+                ? motel.getRooms().stream().filter(room -> "maintenance".equals(room.getStatus())).count()
+                : 0;
+
+        return new MotelStatistics(
+                motelId,
+                motel.getName(),
+                totalRooms,
+                (int) availableRooms,
+                (int) occupiedRooms,
+                (int) maintenanceRooms);
     }
 
     // Convert Motel entity to MotelResponse DTO
@@ -120,7 +174,7 @@ public class MotelService {
         MotelResponse response = new MotelResponse();
         response.setId(motel.getId());
         response.setLandlordId(motel.getLandlord().getId());
-        response.setLandlordName(motel.getLandlord().getUsername());
+        response.setLandlordName(motel.getLandlord().getFullName());
         response.setName(motel.getName());
         response.setAddress(motel.getAddress());
         response.setDescription(motel.getDescription());
@@ -130,5 +184,73 @@ public class MotelService {
         response.setUpdatedAt(motel.getUpdatedAt());
         return response;
     }
-}
 
+    // Inner class for statistics
+    public static class MotelStatistics {
+        private String motelId;
+        private String motelName;
+        private int totalRooms;
+        private int availableRooms;
+        private int occupiedRooms;
+        private int maintenanceRooms;
+
+        public MotelStatistics(String motelId, String motelName, int totalRooms,
+                int availableRooms, int occupiedRooms, int maintenanceRooms) {
+            this.motelId = motelId;
+            this.motelName = motelName;
+            this.totalRooms = totalRooms;
+            this.availableRooms = availableRooms;
+            this.occupiedRooms = occupiedRooms;
+            this.maintenanceRooms = maintenanceRooms;
+        }
+
+        // Getters and setters
+        public String getMotelId() {
+            return motelId;
+        }
+
+        public void setMotelId(String motelId) {
+            this.motelId = motelId;
+        }
+
+        public String getMotelName() {
+            return motelName;
+        }
+
+        public void setMotelName(String motelName) {
+            this.motelName = motelName;
+        }
+
+        public int getTotalRooms() {
+            return totalRooms;
+        }
+
+        public void setTotalRooms(int totalRooms) {
+            this.totalRooms = totalRooms;
+        }
+
+        public int getAvailableRooms() {
+            return availableRooms;
+        }
+
+        public void setAvailableRooms(int availableRooms) {
+            this.availableRooms = availableRooms;
+        }
+
+        public int getOccupiedRooms() {
+            return occupiedRooms;
+        }
+
+        public void setOccupiedRooms(int occupiedRooms) {
+            this.occupiedRooms = occupiedRooms;
+        }
+
+        public int getMaintenanceRooms() {
+            return maintenanceRooms;
+        }
+
+        public void setMaintenanceRooms(int maintenanceRooms) {
+            this.maintenanceRooms = maintenanceRooms;
+        }
+    }
+}

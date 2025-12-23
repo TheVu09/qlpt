@@ -153,6 +153,16 @@ public class RoomService {
         User tenant = userRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
+        // Kiểm tra role của user có phải là TENANT không
+        if (!tenant.getRole().equals("ROLE_TENANT") && !tenant.getRole().equals("ROLE_ADMIN")) {
+            throw new RuntimeException("Chỉ người thuê mới có thể thuê phòng");
+        }
+
+        // Kiểm tra người thuê đã có phòng chưa
+        if (tenant.getCurrentRoomId() != null && !tenant.getCurrentRoomId().isEmpty()) {
+            throw new RuntimeException("Người thuê đã thuê phòng khác");
+        }
+
         if (room.getTenants() == null) {
             room.setTenants(new ArrayList<>());
         }
@@ -180,6 +190,11 @@ public class RoomService {
         room.setUpdatedAt(LocalDateTime.now());
         Room updatedRoom = roomRepository.save(room);
 
+        // Cập nhật currentRoomId của tenant
+        tenant.setCurrentRoomId(roomId);
+        tenant.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(tenant);
+
         return convertToResponse(updatedRoom);
     }
 
@@ -188,11 +203,14 @@ public class RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
 
+        User tenant = userRepository.findById(tenantId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
         if (room.getTenants() == null) {
             throw new RuntimeException("Phòng không có người thuê");
         }
 
-        boolean removed = room.getTenants().removeIf(tenant -> tenant.getId().equals(tenantId));
+        boolean removed = room.getTenants().removeIf(t -> t.getId().equals(tenantId));
 
         if (!removed) {
             throw new RuntimeException("Người thuê không ở trong phòng này");
@@ -201,12 +219,42 @@ public class RoomService {
         // Cập nhật trạng thái phòng
         if (room.getTenants().isEmpty()) {
             room.setStatus("available");
+        } else if (room.getTenants().size() < room.getMaxTenants() && room.getStatus().equals("occupied")) {
+            room.setStatus("available");
         }
 
         room.setUpdatedAt(LocalDateTime.now());
         Room updatedRoom = roomRepository.save(room);
 
+        // Xóa currentRoomId của tenant
+        tenant.setCurrentRoomId(null);
+        tenant.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(tenant);
+
         return convertToResponse(updatedRoom);
+    }
+
+    // Kiểm tra phòng có sẵn không
+    public boolean isRoomAvailable(String roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+        return "available".equals(room.getStatus()) &&
+                (room.getTenants() == null || room.getTenants().size() < room.getMaxTenants());
+    }
+
+    // Lấy danh sách phòng trống trong nhà trọ
+    public List<RoomResponse> getAvailableRoomsByMotel(String motelId) {
+        return roomRepository.findByMotelIdAndStatus(motelId, "available").stream()
+                .filter(room -> room.getTenants() == null || room.getTenants().size() < room.getMaxTenants())
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy danh sách người thuê trong phòng
+    public List<User> getTenantsInRoom(String roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+        return room.getTenants() != null ? room.getTenants() : new ArrayList<>();
     }
 
     // Convert Room entity to RoomResponse DTO
@@ -226,7 +274,7 @@ public class RoomService {
                     .map(User::getId)
                     .collect(Collectors.toList()));
             response.setTenantNames(room.getTenants().stream()
-                    .map(User::getUsername)
+                    .map(User::getFullName)
                     .collect(Collectors.toList()));
         } else {
             response.setTenantIds(new ArrayList<>());
@@ -239,5 +287,3 @@ public class RoomService {
         return response;
     }
 }
-
-
