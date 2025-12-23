@@ -1,6 +1,7 @@
 package com.hutech.demo.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -14,6 +15,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Document(collection = "rooms")
 public class Room {
 
@@ -29,7 +31,7 @@ public class Room {
 
     private Double area; // Diện tích (m2)
 
-    private Integer maxTenants; // Số người tối đa
+    private Integer maxTenants = 4; // Số người tối đa (mặc định 4)
 
     private String status; // available, occupied, maintenance
 
@@ -38,7 +40,21 @@ public class Room {
 
     private List<String> images = new ArrayList<>(); // Danh sách hình ảnh
 
+    private String description; // Mô tả phòng
+
+    private String facilities; // Tiện nghi (điều hòa, tủ lạnh, giường, ...)
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // Tính số slot còn trống
+    public int getAvailableSlots() {
+        return maxTenants - (tenants != null ? tenants.size() : 0);
+    }
+
+    // Kiểm tra phòng có còn chỗ không
+    public boolean hasAvailableSlots() {
+        return getAvailableSlots() > 0 && "available".equals(status);
+    }
 }

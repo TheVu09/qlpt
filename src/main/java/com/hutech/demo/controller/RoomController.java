@@ -146,5 +146,42 @@ public class RoomController {
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-}
 
+    // Lấy danh sách phòng trống (có slot) - Public API không cần đăng nhập
+    @GetMapping("/available")
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getAvailableRooms() {
+        try {
+            List<RoomResponse> rooms = roomService.getRoomsByStatus("available");
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách phòng trống thành công", rooms));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy phòng trống theo nhà trọ - Public API
+    @GetMapping("/available/motel/{motelId}")
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getAvailableRoomsByMotel(
+            @PathVariable String motelId) {
+        try {
+            List<RoomResponse> rooms = roomService.getAvailableRoomsByMotel(motelId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách phòng trống thành công", rooms));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Kiểm tra phòng còn chỗ không
+    @GetMapping("/{roomId}/available")
+    public ResponseEntity<ApiResponse<Boolean>> checkRoomAvailability(
+            @PathVariable String roomId) {
+        try {
+            boolean available = roomService.isRoomAvailable(roomId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Kiểm tra thành công", available));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+}
