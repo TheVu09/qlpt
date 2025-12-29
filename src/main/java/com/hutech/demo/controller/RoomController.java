@@ -1,6 +1,7 @@
 package com.hutech.demo.controller;
 
 import com.hutech.demo.dto.ApiResponse;
+import com.hutech.demo.dto.RoomDetailResponse;
 import com.hutech.demo.dto.RoomRequest;
 import com.hutech.demo.dto.RoomResponse;
 import com.hutech.demo.service.RoomService;
@@ -49,6 +50,18 @@ public class RoomController {
         try {
             RoomResponse room = roomService.getRoomById(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin phòng thành công", room));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy phòng theo ID với đầy đủ thông tin (populated tenants)
+    @GetMapping("/{id}/details")
+    public ResponseEntity<ApiResponse<RoomDetailResponse>> getRoomByIdWithDetails(@PathVariable String id) {
+        try {
+            RoomDetailResponse room = roomService.getRoomByIdWithDetails(id);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin phòng chi tiết thành công", room));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>(false, e.getMessage(), null));

@@ -5,6 +5,7 @@ import com.hutech.demo.dto.MotelResponse;
 import com.hutech.demo.model.Motel;
 import com.hutech.demo.model.User;
 import com.hutech.demo.repository.MotelRepository;
+import com.hutech.demo.repository.RoomRepository;
 import com.hutech.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class MotelService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
 
     // Tạo nhà trọ mới
     public MotelResponse createMotel(MotelRequest request) {
@@ -125,6 +129,12 @@ public class MotelService {
     public void deleteMotel(String id) {
         Motel motel = motelRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhà trọ không tồn tại"));
+
+        // Kiểm tra xem khu trọ có phòng trọ nào không
+        List<com.hutech.demo.model.Room> roomsInMotel = roomRepository.findByMotelId(id);
+        if (roomsInMotel != null && !roomsInMotel.isEmpty()) {
+            throw new RuntimeException("Không thể xóa khu trọ. Khu trọ này đang có " + roomsInMotel.size() + " phòng trọ. Vui lòng xóa tất cả phòng trọ trước khi xóa khu trọ.");
+        }
 
         // Xóa motelId khỏi danh sách của landlord
         User landlord = motel.getLandlord();

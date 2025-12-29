@@ -1,6 +1,7 @@
 package com.hutech.demo.controller;
 
 import com.hutech.demo.dto.ApiResponse;
+import com.hutech.demo.dto.MessageResponse;
 import com.hutech.demo.model.Message;
 import com.hutech.demo.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,22 +36,7 @@ public class MessageController {
         }
     }
 
-    // Gửi tin nhắn nhóm trong khu trọ
-    @PostMapping("/group")
-    public ResponseEntity<ApiResponse<Message>> sendGroupMessage(
-            @RequestBody Map<String, String> request) {
-        try {
-            String senderId = request.get("senderId");
-            String motelId = request.get("motelId");
-            String content = request.get("content");
-
-            Message message = messageService.sendGroupMessage(senderId, motelId, content);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, e.getMessage(), null));
-        }
-    }
+    // Chat khu trọ đã bị bỏ - chỉ còn chat phòng và chat 1vs1
 
     // Gửi thông báo từ admin
     @PostMapping("/announcement")
@@ -89,6 +75,20 @@ public class MessageController {
             @PathVariable String userId2) {
         try {
             List<Message> messages = messageService.getPrivateMessages(userId1, userId2);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn chat private giữa 2 người với populated data
+    @GetMapping("/private/{userId1}/{userId2}/details")
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> getPrivateMessagesWithDetails(
+            @PathVariable String userId1,
+            @PathVariable String userId2) {
+        try {
+            List<MessageResponse> messages = messageService.getPrivateMessagesWithDetails(userId1, userId2);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn thành công", messages));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -175,13 +175,58 @@ public class MessageController {
         }
     }
 
-    // Lấy tin nhắn group trong khu trọ
-    @GetMapping("/group/{motelId}")
-    public ResponseEntity<ApiResponse<List<Message>>> getMotelGroupMessages(
-            @PathVariable String motelId) {
+    // Chat khu trọ đã bị bỏ
+
+    // Gửi tin nhắn nhóm trong phòng trọ
+    @PostMapping("/room-group")
+    public ResponseEntity<ApiResponse<Message>> sendRoomGroupMessage(
+            @RequestBody Map<String, String> request) {
         try {
-            List<Message> messages = messageService.getMotelGroupMessages(motelId);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn nhóm thành công", messages));
+            String senderId = request.get("senderId");
+            String roomId = request.get("roomId");
+            String content = request.get("content");
+
+            Message message = messageService.sendRoomGroupMessage(senderId, roomId, content);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn group trong phòng trọ
+    @GetMapping("/room-group/{roomId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getRoomGroupMessages(
+            @PathVariable String roomId) {
+        try {
+            List<Message> messages = messageService.getRoomGroupMessages(roomId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn nhóm phòng thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tin nhắn group trong phòng trọ với populated data
+    @GetMapping("/room-group/{roomId}/details")
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> getRoomGroupMessagesWithDetails(
+            @PathVariable String roomId) {
+        try {
+            List<MessageResponse> messages = messageService.getRoomGroupMessagesWithDetails(roomId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn nhóm phòng thành công", messages));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Lấy tất cả tin nhắn trong phòng
+    @GetMapping("/room/{roomId}")
+    public ResponseEntity<ApiResponse<List<Message>>> getRoomMessages(
+            @PathVariable String roomId) {
+        try {
+            List<Message> messages = messageService.getRoomMessages(roomId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn phòng thành công", messages));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, e.getMessage(), null));

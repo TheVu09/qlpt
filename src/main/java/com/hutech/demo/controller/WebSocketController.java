@@ -1,6 +1,5 @@
 package com.hutech.demo.controller;
 
-import com.hutech.demo.dto.ApiResponse;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -27,8 +27,7 @@ public class WebSocketController {
      */
     @MessageMapping("/user.connect")
     @SendTo("/topic/online-users")
-    public Map<String, Object> userConnect(@Payload Map<String, String> payload,
-            SimpMessageHeaderAccessor headerAccessor) {
+    public Map<String, Object> userConnect(@Payload Map<String, String> payload, SimpMessageHeaderAccessor headerAccessor) {
         String userId = payload.get("userId");
         String username = payload.get("username");
 
@@ -63,30 +62,54 @@ public class WebSocketController {
         String recipientId = (String) message.get("recipientId");
 
         // Send to specific user
-        messagingTemplate.convertAndSendToUser(
-                recipientId,
-                "/queue/messages",
-                Map.of(
-                        "type", "PRIVATE_MESSAGE",
-                        "content", message.get("content"),
-                        "senderId", message.get("senderId"),
-                        "senderName", message.get("senderName"),
-                        "timestamp", System.currentTimeMillis()));
+        Map<String, Object> wsMessage = new HashMap<>();
+        wsMessage.put("type", "PRIVATE_MESSAGE");
+        wsMessage.put("content", message.get("content"));
+        wsMessage.put("senderId", message.get("senderId"));
+        wsMessage.put("senderName", message.get("senderName"));
+        wsMessage.put("timestamp", System.currentTimeMillis());
+        messagingTemplate.convertAndSendToUser(recipientId, "/queue/messages", wsMessage);
     }
 
     /**
      * Handle group messages (motel chat)
      */
     @MessageMapping("/message.group")
-    @SendTo("/topic/motel.{motelId}")
-    public Map<String, Object> sendGroupMessage(@Payload Map<String, Object> message) {
-        return Map.of(
-                "type", "GROUP_MESSAGE",
-                "content", message.get("content"),
-                "senderId", message.get("senderId"),
-                "senderName", message.get("senderName"),
-                "motelId", message.get("motelId"),
-                "timestamp", System.currentTimeMillis());
+    public void sendGroupMessage(@Payload Map<String, Object> message) {
+        String motelId = (String) message.get("motelId");
+        Map<String, Object> wsMessage = new HashMap<>();
+        wsMessage.put("type", "GROUP_MESSAGE");
+        wsMessage.put("id", message.get("id"));
+        wsMessage.put("content", message.get("content"));
+        wsMessage.put("senderId", message.get("senderId"));
+        wsMessage.put("senderName", message.get("senderName"));
+        wsMessage.put("senderEmail", message.get("senderEmail"));
+        wsMessage.put("senderAvatar", message.get("senderAvatar"));
+        wsMessage.put("motelId", motelId);
+        wsMessage.put("createdAt", message.get("createdAt"));
+        wsMessage.put("timestamp", System.currentTimeMillis());
+        messagingTemplate.convertAndSend("/topic/motel." + motelId, wsMessage);
+    }
+
+    /**
+     * Handle room group messages
+     */
+    @MessageMapping("/message.room-group")
+    public void sendRoomGroupMessage(@Payload Map<String, Object> message) {
+        String roomId = (String) message.get("roomId");
+        Map<String, Object> wsMessage = new HashMap<>();
+        wsMessage.put("type", "ROOM_GROUP_MESSAGE");
+        wsMessage.put("id", message.get("id"));
+        wsMessage.put("content", message.get("content"));
+        wsMessage.put("senderId", message.get("senderId"));
+        wsMessage.put("senderName", message.get("senderName"));
+        wsMessage.put("senderEmail", message.get("senderEmail"));
+        wsMessage.put("senderAvatar", message.get("senderAvatar"));
+        wsMessage.put("roomId", roomId);
+        wsMessage.put("roomNumber", message.get("roomNumber"));
+        wsMessage.put("createdAt", message.get("createdAt"));
+        wsMessage.put("timestamp", System.currentTimeMillis());
+        messagingTemplate.convertAndSend("/topic/room." + roomId, wsMessage);
     }
 
     /**

@@ -9,6 +9,8 @@ import com.hutech.demo.model.User;
 import com.hutech.demo.repository.UserRepository;
 import com.hutech.demo.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -81,14 +83,8 @@ public class AuthService {
         // Tạo JWT token với email và role
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
 
-        // Tạo UserInfo
-        UserInfo userInfo = new UserInfo(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.getFullName(),
-                user.getPhone(),
-                user.getGender());
+        // Tạo UserInfo từ User entity
+        UserInfo userInfo = UserInfo.fromUser(user);
 
         LoginResponse loginResponse = new LoginResponse(userInfo, token);
 
@@ -110,7 +106,7 @@ public class AuthService {
         if (!user.isEnabled()) {
             throw new RuntimeException("Tài khoản chưa được kích hoạt");
         }
-
+    
         // Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Email hoặc mật khẩu không đúng");
@@ -124,17 +120,51 @@ public class AuthService {
         // Tạo JWT token với email và role
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
 
-        // Tạo UserInfo
-        UserInfo userInfo = new UserInfo(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.getFullName(),
-                user.getPhone(),
-                user.getGender());
+        // Tạo UserInfo từ User entity
+        UserInfo userInfo = UserInfo.fromUser(user);
 
         LoginResponse loginResponse = new LoginResponse(userInfo, token);
 
         return new ApiResponse<>(true, "Đăng nhập quản trị thành công", loginResponse);
+    }
+
+    // Check Authentication - Lấy thông tin user hiện tại từ token
+    public ApiResponse<UserInfo> checkAuth() {
+        try {
+            // Lấy authentication từ SecurityContext (đã được set bởi JwtAuthenticationFilter)
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new RuntimeException("Người dùng chưa đăng nhập");
+            }
+
+            // Lấy email từ principal (đã được set trong JwtAuthenticationFilter)
+            String email = authentication.getName();
+            
+            if (email == null || email.isEmpty()) {
+                throw new RuntimeException("Không thể xác định người dùng");
+            }
+
+            // Tìm user từ database
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+            // Kiểm tra tài khoản có bị khóa không
+            if (user.isLocked()) {
+                throw new RuntimeException("Tài khoản đã bị khóa");
+            }
+
+            // Kiểm tra tài khoản có được kích hoạt không
+            if (!user.isEnabled()) {
+                throw new RuntimeException("Tài khoản chưa được kích hoạt");
+            }
+
+            // Tạo UserInfo từ User entity
+            UserInfo userInfo = UserInfo.fromUser(user);
+
+            return new ApiResponse<>(true, "Xác thực thành công", userInfo);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xác thực: " + e.getMessage());
+        }
     }
 }

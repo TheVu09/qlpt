@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoomResponse {
+public class RoomDetailResponse {
     private String id;
     private String motelId;
     private String motelName;
@@ -21,8 +21,7 @@ public class RoomResponse {
     private String status;
     private String description;
     private String facilities;
-    private List<String> tenantIds;
-    private List<String> tenantNames;
+    private List<UserInfo> tenants; // Full tenant info (populated)
     private List<String> images;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

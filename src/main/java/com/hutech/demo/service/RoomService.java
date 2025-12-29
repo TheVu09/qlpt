@@ -1,7 +1,9 @@
 package com.hutech.demo.service;
 
+import com.hutech.demo.dto.RoomDetailResponse;
 import com.hutech.demo.dto.RoomRequest;
 import com.hutech.demo.dto.RoomResponse;
+import com.hutech.demo.dto.UserInfo;
 import com.hutech.demo.model.Motel;
 import com.hutech.demo.model.Room;
 import com.hutech.demo.model.User;
@@ -72,6 +74,13 @@ public class RoomService {
         return convertToResponse(room);
     }
 
+    // Lấy phòng theo ID với đầy đủ thông tin (populated tenants)
+    public RoomDetailResponse getRoomByIdWithDetails(String id) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+        return convertToDetailResponse(room);
+    }
+
     // Lấy phòng theo nhà trọ
     public List<RoomResponse> getRoomsByMotel(String motelId) {
         return roomRepository.findByMotelId(motelId).stream()
@@ -133,6 +142,12 @@ public class RoomService {
     public void deleteRoom(String id) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+
+        // Kiểm tra xem phòng trọ có người ở không
+        if (room.getTenants() != null && !room.getTenants().isEmpty()) {
+            int tenantCount = room.getTenants().size();
+            throw new RuntimeException("Không thể xóa phòng trọ. Phòng này đang có " + tenantCount + " người ở. Vui lòng chuyển tất cả người thuê ra khỏi phòng trước khi xóa.");
+        }
 
         // Xóa phòng khỏi danh sách của nhà trọ
         Motel motel = room.getMotel();
@@ -261,13 +276,23 @@ public class RoomService {
     private RoomResponse convertToResponse(Room room) {
         RoomResponse response = new RoomResponse();
         response.setId(room.getId());
-        response.setMotelId(room.getMotel().getId());
-        response.setMotelName(room.getMotel().getName());
+        
+        // Handle null motel reference (DBRef might not be loaded)
+        if (room.getMotel() != null) {
+            response.setMotelId(room.getMotel().getId());
+            response.setMotelName(room.getMotel().getName());
+        } else {
+            response.setMotelId(null);
+            response.setMotelName("N/A");
+        }
+        
         response.setRoomNumber(room.getRoomNumber());
         response.setPrice(room.getPrice());
         response.setArea(room.getArea());
         response.setMaxTenants(room.getMaxTenants());
         response.setStatus(room.getStatus());
+        response.setDescription(room.getDescription());
+        response.setFacilities(room.getFacilities());
 
         if (room.getTenants() != null) {
             response.setTenantIds(room.getTenants().stream()
@@ -279,6 +304,44 @@ public class RoomService {
         } else {
             response.setTenantIds(new ArrayList<>());
             response.setTenantNames(new ArrayList<>());
+        }
+
+        response.setImages(room.getImages());
+        response.setCreatedAt(room.getCreatedAt());
+        response.setUpdatedAt(room.getUpdatedAt());
+        return response;
+    }
+
+    // Convert Room entity to RoomDetailResponse DTO (with populated tenants)
+    private RoomDetailResponse convertToDetailResponse(Room room) {
+        RoomDetailResponse response = new RoomDetailResponse();
+        response.setId(room.getId());
+        
+        // Handle null motel reference (DBRef might not be loaded)
+        if (room.getMotel() != null) {
+            response.setMotelId(room.getMotel().getId());
+            response.setMotelName(room.getMotel().getName());
+        } else {
+            response.setMotelId(null);
+            response.setMotelName("N/A");
+        }
+        
+        response.setRoomNumber(room.getRoomNumber());
+        response.setPrice(room.getPrice());
+        response.setArea(room.getArea());
+        response.setMaxTenants(room.getMaxTenants());
+        response.setStatus(room.getStatus());
+        response.setDescription(room.getDescription());
+        response.setFacilities(room.getFacilities());
+
+        // Populate full tenant info
+        if (room.getTenants() != null && !room.getTenants().isEmpty()) {
+            List<UserInfo> tenantInfos = room.getTenants().stream()
+                    .map(UserInfo::fromUser)
+                    .collect(Collectors.toList());
+            response.setTenants(tenantInfos);
+        } else {
+            response.setTenants(new ArrayList<>());
         }
 
         response.setImages(room.getImages());

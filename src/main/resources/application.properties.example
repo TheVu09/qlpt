@@ -1,0 +1,82 @@
+spring.application.name=demo
+server.servlet.session.tracking-modes=cookie
+server.port=8080
+
+# MongoDB Configuration
+spring.data.mongodb.uri=mongodb://localhost:27017/quan_ly_nha_tro
+spring.data.mongodb.database=quan_ly_nha_tro
+
+# Logging
+logging.level.org.springframework.data.mongodb=DEBUG
+logging.level.com.hutech.demo=DEBUG
+
+# ============================================
+# CLOUDINARY CONFIGURATION
+# ============================================
+# IMPORTANT: Thay đổi các giá trị dưới đây bằng thông tin Cloudinary của bạn
+# Lấy từ: https://cloudinary.com/console (Dashboard)
+# ============================================
+
+# Cloud Name (required)
+# Example: dcxyz123abc
+cloudinary.cloud-name=YOUR_CLOUD_NAME_HERE
+
+# API Key (required)
+# Example: 987654321098765
+cloudinary.api-key=YOUR_API_KEY_HERE
+
+# API Secret (required)
+# Example: AbCdEf123456GhIjKl789012
+cloudinary.api-secret=YOUR_API_SECRET_HERE
+
+# ============================================
+# FILE UPLOAD CONFIGURATION
+# ============================================
+# Cấu hình upload file (đã set sẵn, không cần thay đổi)
+# ============================================
+
+# Max file size per upload (10MB)
+spring.servlet.multipart.max-file-size=10MB
+
+# Max total request size (50MB - for multiple files)
+spring.servlet.multipart.max-request-size=50MB
+
+# Enable multipart upload
+spring.servlet.multipart.enabled=true
+
+# ============================================
+# HƯỚNG DẪN SETUP CLOUDINARY
+# ============================================
+# 
+# Bước 1: Đăng ký Cloudinary (miễn phí)
+#   - Truy cập: https://cloudinary.com/users/register/free
+#   - Điền thông tin đăng ký
+#   - Xác nhận email
+#
+# Bước 2: Lấy thông tin từ Dashboard
+#   - Đăng nhập vào Cloudinary
+#   - Vào Dashboard: https://cloudinary.com/console
+#   - Copy 3 giá trị:
+#     * Cloud Name
+#     * API Key
+#     * API Secret
+#
+# Bước 3: Cập nhật file này
+#   - Replace YOUR_CLOUD_NAME_HERE bằng Cloud Name
+#   - Replace YOUR_API_KEY_HERE bằng API Key
+#   - Replace YOUR_API_SECRET_HERE bằng API Secret
+#
+# Bước 4: Restart ứng dụng
+#   ./mvnw spring-boot:run
+#
+# ============================================
+# VÍ DỤ CONFIGURATION
+# ============================================
+# cloudinary.cloud-name=dcxyz123abc
+# cloudinary.api-key=987654321098765
+# cloudinary.api-secret=AbCdEf123456GhIjKl789012
+# ============================================
+#
+# Xem thêm: CLOUDINARY_SETUP.md
+#
+

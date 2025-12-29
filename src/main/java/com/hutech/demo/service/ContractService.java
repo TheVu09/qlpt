@@ -1,5 +1,6 @@
 package com.hutech.demo.service;
 
+import com.hutech.demo.dto.ContractResponse;
 import com.hutech.demo.model.Contract;
 import com.hutech.demo.model.Room;
 import com.hutech.demo.model.User;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ContractService {
@@ -56,6 +58,13 @@ public class ContractService {
     public List<Contract> getContractsByTenant(String tenantId) {
         return contractRepository.findByTenantId(tenantId);
     }
+
+    // Lấy contracts theo tenant với populated data
+    public List<ContractResponse> getContractsByTenantWithDetails(String tenantId) {
+        return contractRepository.findByTenantId(tenantId).stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
     
     public List<Contract> getContractsByRoom(String roomId) {
         return contractRepository.findByRoomId(roomId);
@@ -74,5 +83,42 @@ public class ContractService {
         // real logic needs to check if room is shared or private.
         
         return contractRepository.save(contract);
+    }
+
+    // Convert Contract entity to ContractResponse DTO (with populated data)
+    private ContractResponse convertToResponse(Contract contract) {
+        ContractResponse response = new ContractResponse();
+        response.setId(contract.getId());
+
+        // Populate room info
+        if (contract.getRoom() != null) {
+            Room room = contract.getRoom();
+            response.setRoomId(room.getId());
+            response.setRoomNumber(room.getRoomNumber());
+            if (room.getMotel() != null) {
+                response.setMotelId(room.getMotel().getId());
+                response.setMotelName(room.getMotel().getName());
+            }
+        }
+
+        // Populate tenant info
+        if (contract.getTenant() != null) {
+            User tenant = contract.getTenant();
+            response.setTenantId(tenant.getId());
+            response.setTenantName(tenant.getFullName());
+            response.setTenantEmail(tenant.getEmail());
+            response.setTenantPhone(tenant.getPhone());
+            response.setTenantAvatar(tenant.getAvatar());
+        }
+
+        response.setStartDate(contract.getStartDate());
+        response.setEndDate(contract.getEndDate());
+        response.setDeposit(contract.getDeposit());
+        response.setMonthlyPrice(contract.getMonthlyPrice());
+        response.setStatus(contract.getStatus());
+        response.setCreatedAt(contract.getCreatedAt());
+        response.setUpdatedAt(contract.getUpdatedAt());
+
+        return response;
     }
 }

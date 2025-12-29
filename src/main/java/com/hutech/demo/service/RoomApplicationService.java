@@ -1,5 +1,6 @@
 package com.hutech.demo.service;
 
+import com.hutech.demo.dto.ApplicationResponse;
 import com.hutech.demo.model.Room;
 import com.hutech.demo.model.RoomApplication;
 import com.hutech.demo.model.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomApplicationService {
@@ -63,29 +65,39 @@ public class RoomApplicationService {
         return applicationRepository.save(application);
     }
 
-    // Lấy tất cả đơn đăng ký (dành cho admin)
-    public List<RoomApplication> getAllApplications() {
-        return applicationRepository.findAll();
+    // Lấy tất cả đơn đăng ký (dành cho admin) - trả về DTO
+    public List<ApplicationResponse> getAllApplications() {
+        return applicationRepository.findAll().stream()
+                .map(ApplicationResponse::fromApplication)
+                .collect(Collectors.toList());
     }
 
-    // Lấy đơn đăng ký theo trạng thái
-    public List<RoomApplication> getApplicationsByStatus(String status) {
-        return applicationRepository.findByStatus(status);
+    // Lấy đơn đăng ký theo trạng thái - trả về DTO
+    public List<ApplicationResponse> getApplicationsByStatus(String status) {
+        return applicationRepository.findByStatus(status).stream()
+                .map(ApplicationResponse::fromApplication)
+                .collect(Collectors.toList());
     }
 
-    // Lấy đơn đăng ký của user
-    public List<RoomApplication> getApplicationsByUser(String userId) {
-        return applicationRepository.findByApplicantId(userId);
+    // Lấy đơn đăng ký của user - trả về DTO
+    public List<ApplicationResponse> getApplicationsByUser(String userId) {
+        return applicationRepository.findByApplicantId(userId).stream()
+                .map(ApplicationResponse::fromApplication)
+                .collect(Collectors.toList());
     }
 
-    // Lấy đơn đăng ký theo phòng
-    public List<RoomApplication> getApplicationsByRoom(String roomId) {
-        return applicationRepository.findByRoomId(roomId);
+    // Lấy đơn đăng ký theo phòng - trả về DTO
+    public List<ApplicationResponse> getApplicationsByRoom(String roomId) {
+        return applicationRepository.findByRoomId(roomId).stream()
+                .map(ApplicationResponse::fromApplication)
+                .collect(Collectors.toList());
     }
 
-    // Lấy đơn đăng ký theo khu trọ
-    public List<RoomApplication> getApplicationsByMotel(String motelId) {
-        return applicationRepository.findByRoomMotelId(motelId);
+    // Lấy đơn đăng ký theo khu trọ - trả về DTO
+    public List<ApplicationResponse> getApplicationsByMotel(String motelId) {
+        return applicationRepository.findByRoomMotelId(motelId).stream()
+                .map(ApplicationResponse::fromApplication)
+                .collect(Collectors.toList());
     }
 
     // Duyệt đơn đăng ký (Admin)

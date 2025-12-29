@@ -1,6 +1,7 @@
 package com.hutech.demo.controller;
 
 import com.hutech.demo.dto.ApiResponse;
+import com.hutech.demo.dto.ApplicationResponse;
 import com.hutech.demo.model.RoomApplication;
 import com.hutech.demo.service.RoomApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,10 +39,10 @@ public class RoomApplicationController {
 
     // Lấy tất cả đơn đăng ký (Admin)
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LANDLORD')")
-    public ResponseEntity<ApiResponse<List<RoomApplication>>> getAllApplications() {
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getAllApplications() {
         try {
-            List<RoomApplication> applications = applicationService.getAllApplications();
+            List<ApplicationResponse> applications = applicationService.getAllApplications();
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách đơn thành công", applications));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -51,10 +52,11 @@ public class RoomApplicationController {
 
     // Lấy đơn đăng ký theo trạng thái (Admin)
     @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponse<List<RoomApplication>>> getApplicationsByStatus(
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getApplicationsByStatus(
             @PathVariable String status) {
         try {
-            List<RoomApplication> applications = applicationService.getApplicationsByStatus(status);
+            List<ApplicationResponse> applications = applicationService.getApplicationsByStatus(status);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách đơn thành công", applications));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -64,10 +66,10 @@ public class RoomApplicationController {
 
     // Lấy đơn đăng ký của user
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<RoomApplication>>> getApplicationsByUser(
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getApplicationsByUser(
             @PathVariable String userId) {
         try {
-            List<RoomApplication> applications = applicationService.getApplicationsByUser(userId);
+            List<ApplicationResponse> applications = applicationService.getApplicationsByUser(userId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách đơn thành công", applications));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -77,10 +79,11 @@ public class RoomApplicationController {
 
     // Lấy đơn đăng ký theo phòng (Admin)
     @GetMapping("/room/{roomId}")
-    public ResponseEntity<ApiResponse<List<RoomApplication>>> getApplicationsByRoom(
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getApplicationsByRoom(
             @PathVariable String roomId) {
         try {
-            List<RoomApplication> applications = applicationService.getApplicationsByRoom(roomId);
+            List<ApplicationResponse> applications = applicationService.getApplicationsByRoom(roomId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách đơn thành công", applications));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -90,10 +93,11 @@ public class RoomApplicationController {
 
     // Lấy đơn đăng ký theo khu trọ (Admin)
     @GetMapping("/motel/{motelId}")
-    public ResponseEntity<ApiResponse<List<RoomApplication>>> getApplicationsByMotel(
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getApplicationsByMotel(
             @PathVariable String motelId) {
         try {
-            List<RoomApplication> applications = applicationService.getApplicationsByMotel(motelId);
+            List<ApplicationResponse> applications = applicationService.getApplicationsByMotel(motelId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách đơn thành công", applications));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -103,8 +107,8 @@ public class RoomApplicationController {
 
     // Duyệt đơn đăng ký (Admin)
     @PostMapping("/{applicationId}/approve")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LANDLORD')")
-    public ResponseEntity<ApiResponse<RoomApplication>> approveApplication(
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> approveApplication(
             @PathVariable String applicationId,
             @RequestBody Map<String, String> request) {
         try {
@@ -113,7 +117,8 @@ public class RoomApplicationController {
 
             RoomApplication application = applicationService.approveApplication(
                     applicationId, adminId, adminNote);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Duyệt đơn thành công", application));
+            ApplicationResponse response = ApplicationResponse.fromApplication(application);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Duyệt đơn thành công", response));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, e.getMessage(), null));
@@ -122,8 +127,8 @@ public class RoomApplicationController {
 
     // Từ chối đơn đăng ký (Admin)
     @PostMapping("/{applicationId}/reject")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LANDLORD')")
-    public ResponseEntity<ApiResponse<RoomApplication>> rejectApplication(
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> rejectApplication(
             @PathVariable String applicationId,
             @RequestBody Map<String, String> request) {
         try {
@@ -132,7 +137,8 @@ public class RoomApplicationController {
 
             RoomApplication application = applicationService.rejectApplication(
                     applicationId, adminId, adminNote);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Từ chối đơn thành công", application));
+            ApplicationResponse response = ApplicationResponse.fromApplication(application);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Từ chối đơn thành công", response));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, e.getMessage(), null));
@@ -155,7 +161,7 @@ public class RoomApplicationController {
 
     // Lấy thống kê đơn đăng ký (Admin)
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LANDLORD')")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_LANDLORD')")
     public ResponseEntity<ApiResponse<RoomApplicationService.ApplicationStatistics>> getStatistics() {
         try {
             RoomApplicationService.ApplicationStatistics stats = applicationService.getStatistics();

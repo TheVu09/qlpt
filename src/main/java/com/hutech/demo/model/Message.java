@@ -21,17 +21,12 @@ public class Message {
     private String id;
 
     @DBRef
+    private Chat chat; // Chat mà message này thuộc về
+
+    @DBRef
     private User sender; // Người gửi
 
-    @DBRef
-    private User receiver; // Người nhận (null nếu là tin nhắn chung trong cộng đồng)
-
-    @DBRef
-    private Motel motel; // Khu trọ (để chat theo từng khu trọ)
-
     private String content; // Nội dung tin nhắn
-
-    private String messageType; // private (1-1), group (nhóm trong khu trọ), announcement (thông báo từ admin)
 
     private boolean isRead; // Đã đọc chưa
 
