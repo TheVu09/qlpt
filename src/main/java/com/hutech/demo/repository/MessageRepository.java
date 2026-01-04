@@ -11,6 +11,16 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     
     List<Message> findByChatIdOrderByCreatedAtDesc(String chatId);
     
+    // Đếm tin nhắn chưa đọc trong chat (không phải của sender)
+    // Note: Query với DBRef không hoạt động tốt, sử dụng logic trong service layer thay thế
+    // @Query("{ 'chat.$id': ?0, 'sender.$id': { $ne: ?1 }, 'isRead': false }")
+    // long countByChatIdAndSenderNotAndIsReadFalse(String chatId, String senderId);
+    
+    // Tìm tin nhắn chưa đọc trong chat (không phải của sender)
+    // Note: Query với DBRef không hoạt động tốt, sử dụng logic trong service layer thay thế
+    // @Query("{ 'chat.$id': ?0, 'sender.$id': { $ne: ?1 }, 'isRead': false }")
+    // List<Message> findByChatIdAndSenderNotAndIsReadFalse(String chatId, String senderId);
+    
     // Legacy methods đã được migrate sang query qua Chat
     // Các methods này không còn hoạt động vì Message không còn các field tương ứng
 }

@@ -29,6 +29,9 @@ public class RoomApplicationService {
     @Autowired
     private RoomService roomService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     // Tạo đơn đăng ký phòng
     public RoomApplication createApplication(String userId, String roomId, String message) {
         User user = userRepository.findById(userId)
@@ -62,7 +65,17 @@ public class RoomApplicationService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return applicationRepository.save(application);
+        RoomApplication saved = applicationRepository.save(application);
+
+        // Notify all admins about new application
+        List<User> admins = userRepository.findByRole("ROLE_ADMIN");
+        for (User admin : admins) {
+            notificationService.notifyNewApplication(admin.getId(), userId, saved.getId());
+        }
+
+        System.out.println("New application created: " + saved.getId() + " - Notified " + admins.size() + " admin(s)");
+
+        return saved;
     }
 
     // Lấy tất cả đơn đăng ký (dành cho admin) - trả về DTO
@@ -134,7 +147,12 @@ public class RoomApplicationService {
         // Thêm người thuê vào phòng
         roomService.addTenantToRoom(room.getId(), applicant.getId());
 
-        return applicationRepository.save(application);
+        RoomApplication saved = applicationRepository.save(application);
+
+        // Notify applicant về approved
+        notificationService.notifyApplicationApproved(applicant.getId(), saved.getId());
+
+        return saved;
     }
 
     // Từ chối đơn đăng ký (Admin)
@@ -155,7 +173,15 @@ public class RoomApplicationService {
         application.setReviewedAt(LocalDateTime.now());
         application.setUpdatedAt(LocalDateTime.now());
 
-        return applicationRepository.save(application);
+        RoomApplication saved = applicationRepository.save(application);
+
+        // Notify applicant về rejected
+        notificationService.notifyApplicationRejected(
+                application.getApplicant().getId(),
+                saved.getId(),
+                adminNote);
+
+        return saved;
     }
 
     // Hủy đơn đăng ký (User)

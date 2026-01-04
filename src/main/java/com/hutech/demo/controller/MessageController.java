@@ -232,4 +232,32 @@ public class MessageController {
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
+
+    // Đếm số tin nhắn chưa đọc trong một chat
+    @GetMapping("/unread/chat/{chatId}")
+    public ResponseEntity<ApiResponse<Long>> countUnreadMessagesInChat(
+            @PathVariable String chatId,
+            @RequestParam String userId) {
+        try {
+            long count = messageService.countUnreadMessagesInChat(chatId, userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đếm tin nhắn chưa đọc thành công", count));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    // Đánh dấu tất cả tin nhắn trong chat là đã đọc
+    @PutMapping("/read-chat/{chatId}")
+    public ResponseEntity<ApiResponse<String>> markChatMessagesAsRead(
+            @PathVariable String chatId,
+            @RequestParam String userId) {
+        try {
+            messageService.markChatMessagesAsRead(chatId, userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu tất cả tin nhắn đã đọc thành công", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
 }

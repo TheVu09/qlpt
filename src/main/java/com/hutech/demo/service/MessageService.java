@@ -333,6 +333,49 @@ public class MessageService {
         return getUnreadMessages(userId).size();
     }
 
+    // Đếm số tin nhắn chưa đọc trong một chat (không phải của user)
+    public long countUnreadMessagesInChat(String chatId, String userId) {
+        try {
+            // Get all messages in chat
+            List<Message> messages = messageRepository.findByChatIdOrderByCreatedAtAsc(chatId);
+            
+            // Count unread messages not sent by current user
+            return messages.stream()
+                    .filter(msg -> msg.getSender() != null && !msg.getSender().getId().equals(userId))
+                    .filter(msg -> !msg.isRead())
+                    .count();
+        } catch (Exception e) {
+            System.err.println("Error counting unread messages in chat " + chatId + ": " + e.getMessage());
+            return 0;
+        }
+    }
+
+    // Đánh dấu tất cả tin nhắn trong chat là đã đọc (không phải của user)
+    public void markChatMessagesAsRead(String chatId, String userId) {
+        try {
+            // Get all messages in chat
+            List<Message> messages = messageRepository.findByChatIdOrderByCreatedAtAsc(chatId);
+            
+            // Filter unread messages not sent by current user
+            List<Message> unreadMessages = messages.stream()
+                    .filter(msg -> msg.getSender() != null && !msg.getSender().getId().equals(userId))
+                    .filter(msg -> !msg.isRead())
+                    .collect(Collectors.toList());
+            
+            // Mark as read
+            unreadMessages.forEach(message -> {
+                message.setRead(true);
+                message.setUpdatedAt(LocalDateTime.now());
+            });
+            
+            if (!unreadMessages.isEmpty()) {
+                messageRepository.saveAll(unreadMessages);
+            }
+        } catch (Exception e) {
+            System.err.println("Error marking messages as read in chat " + chatId + ": " + e.getMessage());
+        }
+    }
+
     // Gửi tin nhắn nhóm trong phòng trọ (chỉ người trong phòng)
     public Message sendRoomGroupMessage(String senderId, String roomId, String content) {
         User sender = userRepository.findById(senderId)
